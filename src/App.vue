@@ -15,8 +15,22 @@
               </v-col>
             </v-row>
             <v-row>
-              <v-col cols="6"><v-text-field label="开始时间" hide-details="auto"></v-text-field></v-col>
-              <v-col cols="6"><v-text-field label="结束时间" hide-details="auto"></v-text-field></v-col>
+              <v-col cols="6"
+                ><v-text-field
+                  label="开始时间"
+                  hide-details="auto"
+                  prepend-icon="mdi-arrow-left"
+                  append-outer-icon="mdi-arrow-right"
+                ></v-text-field
+              ></v-col>
+              <v-col cols="6"
+                ><v-text-field
+                  label="结束时间"
+                  hide-details="auto"
+                  prepend-icon="mdi-arrow-left"
+                  append-outer-icon="mdi-arrow-right"
+                ></v-text-field
+              ></v-col>
             </v-row>
             <v-row>
               <v-col cols="12">
@@ -47,7 +61,7 @@
 export default {
   name: "App",
   data: () => ({
-    range: [30, 60],
+    range: [0, 100],
     DITHER: ["bayer", "heckbert", "floyd_steinberg", "sierra2", "sierra2_4a"],
   }),
 };
