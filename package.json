@@ -11,6 +11,7 @@
     "printWidth": 120
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.10.0",
     "core-js": "^3.6.5",
     "vue": "^2.6.11",
     "vuetify": "^2.4.0"
