@@ -7,6 +7,9 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
+  "prettier": {
+    "printWidth": 120
+  },
   "dependencies": {
     "core-js": "^3.6.5",
     "vue": "^2.6.11",
