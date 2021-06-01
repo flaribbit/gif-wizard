@@ -24,8 +24,8 @@
                   append-outer-icon="mdi-arrow-right"
                   :value="toTime(range[0])"
                   @change="setStartTime"
-                  @click:prepend="$set(range, 0, range[0] - 1)"
-                  @click:append-outer="$set(range, 0, range[0] + 1)"
+                  @click:prepend="adjustTime(0, -1)"
+                  @click:append-outer="adjustTime(0, 1)"
                 ></v-text-field
               ></v-col>
               <v-col cols="6"
@@ -36,8 +36,8 @@
                   append-outer-icon="mdi-arrow-right"
                   :value="toTime(range[1])"
                   @change="setEndTime"
-                  @click:prepend="$set(range, 1, range[1] - 1)"
-                  @click:append-outer="$set(range, 1, range[1] + 1)"
+                  @click:prepend="adjustTime(1, -1)"
+                  @click:append-outer="adjustTime(1, 1)"
                 ></v-text-field
               ></v-col>
             </v-row>
@@ -64,7 +64,7 @@
             </v-row>
             <v-row>
               <v-col>
-                <v-btn class="mr-4" color="primary" outlined @click="getImage">getImage</v-btn>
+                <v-btn class="mr-4" color="primary" outlined @click="getImage(range[0])">getImage</v-btn>
                 <v-btn class="mr-4" color="primary" outlined @click="getInfo">getInfo</v-btn>
                 <v-btn class="mr-4" color="primary" outlined @click="test">test</v-btn>
               </v-col>
@@ -130,6 +130,9 @@ export default {
     setEndTime(v) {
       this.$set(this.range, 1, this.toFrames(v));
     },
+    adjustTime(k, d) {
+      this.$set(this.range, k, this.range[k] + d);
+    },
     async onfilechange(e) {
       if (!e) return;
       this.file = e;
@@ -137,14 +140,17 @@ export default {
       await this.getInfo();
       this.message("视频读取成功");
     },
-    async getImage() {
-      await this.ffmpeg.run("-i", this.file.name, "-frames", "1", "output.png");
+    async getImage(frame) {
+      //获取图片
+      console.log(frame);
+      await this.ffmpeg.run("-ss", this.toTime(frame), "-i", this.file.name, "-frames", "1", "output.png");
       const data = this.ffmpeg.FS("readFile", "output.png");
       //显示图片
       if (this.image.startsWith("blob://")) URL.revokeObjectURL(this.image);
       this.image = URL.createObjectURL(new Blob([data.buffer], { type: "image/png" }));
     },
     async getInfo() {
+      //获取视频信息 主要是帧率
       console.log("getInfo");
       const regexDuration = /^ {2}Duration: (\d+):(\d+):(\d+\.\d+)/;
       const regexVideo = /^ {4}Stream #0:0.+?([\d.]+) fps/;
@@ -155,7 +161,7 @@ export default {
         } else if ((res = regexVideo.exec(message))) {
           this.fps = Number(res[1]);
           this.frames *= this.fps;
-          this.range = [0, this.frames];
+          this.$set(this.range, 1, this.frames);
         }
       });
       await this.ffmpeg.run("-i", this.file.name);
@@ -172,6 +178,10 @@ export default {
     this.ffmpeg = ffmpeg;
     this.fetchFile = fetchFile;
     await ffmpeg.load();
+    this.message("加载ffmpeg成功");
+  },
+  beforeDestroy() {
+    this.ffmpeg.exit();
   },
 };
 </script>
