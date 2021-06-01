@@ -75,6 +75,7 @@
           </v-col>
           <v-col cols="6">
             <v-img class="mx-auto" contain :src="image"></v-img>
+            <v-btn color="primary" alt="output" class="mt-4 mx-auto d-block" outlined @click="save">保存图片</v-btn>
           </v-col>
         </v-row>
         <v-snackbar v-model="snackbar.show" light>
@@ -180,6 +181,12 @@ export default {
       if (this.image.startsWith("blob://")) URL.revokeObjectURL(this.image);
       this.image = URL.createObjectURL(new Blob([data.buffer], { type: "image/gif" }));
       this.message("转换为gif成功");
+    },
+    save() {
+      var a = document.createElement("a");
+      a.href = this.image;
+      a.download = "output.gif";
+      a.click();
     },
   },
   async mounted() {
