@@ -19,23 +19,35 @@
               <v-col cols="6"
                 ><v-text-field
                   label="开始时间"
+                  v-model="startTime"
                   hide-details="auto"
                   prepend-icon="mdi-arrow-left"
                   append-outer-icon="mdi-arrow-right"
+                  @click:append="range[0] > 1 && range[0]--"
+                  @click:append-outer="range[0] < range[1] && range[0]++"
                 ></v-text-field
               ></v-col>
               <v-col cols="6"
                 ><v-text-field
                   label="结束时间"
+                  v-model="endTime"
                   hide-details="auto"
                   prepend-icon="mdi-arrow-left"
                   append-outer-icon="mdi-arrow-right"
+                  @click:append="range[1] > range[0] && range[1]--"
+                  @click:append-outer="range[1] + 1 < frames && range[1]++"
                 ></v-text-field
               ></v-col>
             </v-row>
             <v-row>
               <v-col cols="12">
-                <v-range-slider label="截取时间" min="0" max="100" v-model="range" hide-details="auto"></v-range-slider>
+                <v-range-slider
+                  label="截取时间"
+                  min="0"
+                  :max="frames"
+                  v-model="range"
+                  hide-details="auto"
+                ></v-range-slider>
               </v-col>
             </v-row>
             <v-row>
@@ -51,7 +63,12 @@
             <v-row>
               <v-col>
                 <v-btn class="mr-4" color="primary" outlined @click="getImage">getImage</v-btn>
-                <v-btn class="mr-4" color="primary" outlined @click="getInfo">getImage</v-btn>
+                <v-btn class="mr-4" color="primary" outlined @click="getInfo">getInfo</v-btn>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <p>视频信息：{{ this.frames }}, {{ this.fps }}fps</p>
               </v-col>
             </v-row>
           </v-col>
@@ -59,6 +76,12 @@
             <v-img class="mx-auto" max-height="360" max-width="640" :src="image"></v-img>
           </v-col>
         </v-row>
+        <v-snackbar v-model="snackbar.show" light>
+          {{ snackbar.message }}
+          <template v-slot:action="{ attrs }">
+            <v-btn color="primary" text v-bind="attrs" @click="snackbar.show = false">知道了</v-btn>
+          </template>
+        </v-snackbar>
       </v-container>
     </v-main>
   </v-app>
@@ -68,20 +91,59 @@
 export default {
   name: "App",
   data: () => ({
-    range: [0, 100],
     DITHER: ["bayer", "heckbert", "floyd_steinberg", "sierra2", "sierra2_4a"],
     image: "https://picsum.photos/id/11/500/300",
-    duration: 100,
-    fps: 10,
+    range: [0, 1],
+    frames: 1,
+    fps: 1,
     ffmpeg: null,
     file: null,
     fetchFile: null,
+    snackbar: {
+      show: false,
+      message: "",
+    },
   }),
+  computed: {
+    startTime: {
+      set(v) {
+        this.range[0] = this.fromTime(v);
+      },
+      get() {
+        return this.toTime(this.range[0]);
+      },
+    },
+    endTime: {
+      set(v) {
+        this.range[1] = this.fromTime(v);
+      },
+      get() {
+        return this.toTime(this.range[1]);
+      },
+    },
+  },
   methods: {
+    message(msg) {
+      this.snackbar.message = msg;
+      this.snackbar.show = true;
+    },
+    fromTime(str) {
+      var res = str.match(/(\d+):(\d+):(\d+).(\d+)/);
+      if (res) {
+        return Math.floor(Number(res[1]) * 3600 + Number(res[2]) * 60 + Number(res[3]) + Number(res[4]) / 100);
+      } else {
+        this.message("时间格式不符合00:00:00.000");
+      }
+    },
+    toTime(frames) {
+      return new Date((frames / this.fps) * 1000).toISOString().substring(11, 23);
+    },
     async onfilechange(e) {
       if (!e) return;
       this.file = e;
       this.ffmpeg.FS("writeFile", this.file.name, await this.fetchFile(this.file));
+      await this.getInfo();
+      this.message("视频读取成功");
     },
     async getImage() {
       await this.ffmpeg.run("-i", this.file.name, "-frames", "1", "output.png");
@@ -91,18 +153,19 @@ export default {
     async getInfo() {
       console.log("getInfo");
       const regexDuration = /^ {2}Duration: (\d+):(\d+):(\d+).(\d+)/;
-      const regexVideo = /^ {4}Stream #0:0.+?(\d+) fps/;
+      const regexVideo = /^ {4}Stream #0:0.+?([\d.]+) fps/;
       this.ffmpeg.setLogger(({ message }) => {
         var res;
         if ((res = regexDuration.exec(message))) {
-          this.duration = res[1] * 3600 + res[2] * 60 + res[3] + res[4] / 100;
+          this.frames = Math.floor(Number(res[1]) * 3600 + Number(res[2]) * 60 + Number(res[3]) + Number(res[4]) / 100);
         } else if ((res = regexVideo.exec(message))) {
           this.fps = Number(res[1]);
-          this.duration *= this.fps;
+          this.frames *= this.fps;
+          this.range[1] = this.frames;
         }
       });
       await this.ffmpeg.run("-i", this.file.name);
-      this.ffmpeg.setLogger();
+      this.ffmpeg.setLogger(() => {});
     },
   },
   async mounted() {
