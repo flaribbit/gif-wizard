@@ -23,7 +23,7 @@
                   prepend-icon="mdi-arrow-left"
                   append-outer-icon="mdi-arrow-right"
                   :value="toTime(range[0])"
-                  @change="setStartTime"
+                  @change="setTime(0, $event)"
                   @click:prepend="adjustTime(0, -1)"
                   @click:append-outer="adjustTime(0, 1)"
                 ></v-text-field
@@ -35,7 +35,7 @@
                   prepend-icon="mdi-arrow-left"
                   append-outer-icon="mdi-arrow-right"
                   :value="toTime(range[1])"
-                  @change="setEndTime"
+                  @change="setTime(1, $event)"
                   @click:prepend="adjustTime(1, -1)"
                   @click:append-outer="adjustTime(1, 1)"
                 ></v-text-field
@@ -123,11 +123,9 @@ export default {
     toTime(frames) {
       return new Date((frames / this.fps) * 1000).toISOString().substring(11, 23);
     },
-    setStartTime(v) {
-      this.$set(this.range, 0, this.toFrames(v));
-    },
-    setEndTime(v) {
-      this.$set(this.range, 1, this.toFrames(v));
+    setTime(k, v) {
+      this.$set(this.range, k, this.toFrames(v));
+      this.getImage(this.range[k]);
     },
     adjustTime(k, d) {
       this.$set(this.range, k, this.range[k] + d);
