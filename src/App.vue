@@ -3,7 +3,7 @@
     <v-main>
       <v-container>
         <v-row align="center">
-          <v-col cols="6">
+          <v-col cols="12" sm="6">
             <v-row>
               <v-col cols="12">
                 <v-file-input
@@ -73,7 +73,7 @@
               </v-col>
             </v-row>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="12" sm="6">
             <v-img class="mx-auto" contain :src="image"></v-img>
             <v-btn color="primary" alt="output" class="mt-4 mx-auto d-block" outlined @click="save">保存图片</v-btn>
           </v-col>
