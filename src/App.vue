@@ -7,7 +7,7 @@
             <v-row>
               <v-col cols="12">
                 <v-file-input
-                  accept="video/*"
+                  accept="video/*, .mkv, .flv"
                   label="选择视频文件"
                   prepend-icon="mdi-file-video-outline"
                   hide-details="auto"
