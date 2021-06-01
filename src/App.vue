@@ -19,23 +19,25 @@
               <v-col cols="6"
                 ><v-text-field
                   label="开始时间"
-                  v-model="startTime"
                   hide-details="auto"
                   prepend-icon="mdi-arrow-left"
                   append-outer-icon="mdi-arrow-right"
-                  @click:append="range[0] > 1 && range[0]--"
-                  @click:append-outer="range[0] < range[1] && range[0]++"
+                  :value="toTime(range[0])"
+                  @change="setStartTime"
+                  @click:prepend="$set(range, 0, range[0] - 1)"
+                  @click:append-outer="$set(range, 0, range[0] + 1)"
                 ></v-text-field
               ></v-col>
               <v-col cols="6"
                 ><v-text-field
                   label="结束时间"
-                  v-model="endTime"
                   hide-details="auto"
                   prepend-icon="mdi-arrow-left"
                   append-outer-icon="mdi-arrow-right"
-                  @click:append="range[1] > range[0] && range[1]--"
-                  @click:append-outer="range[1] + 1 < frames && range[1]++"
+                  :value="toTime(range[1])"
+                  @change="setEndTime"
+                  @click:prepend="$set(range, 1, range[1] - 1)"
+                  @click:append-outer="$set(range, 1, range[1] + 1)"
                 ></v-text-field
               ></v-col>
             </v-row>
@@ -64,6 +66,7 @@
               <v-col>
                 <v-btn class="mr-4" color="primary" outlined @click="getImage">getImage</v-btn>
                 <v-btn class="mr-4" color="primary" outlined @click="getInfo">getInfo</v-btn>
+                <v-btn class="mr-4" color="primary" outlined @click="test">test</v-btn>
               </v-col>
             </v-row>
             <v-row>
@@ -104,39 +107,28 @@ export default {
       message: "",
     },
   }),
-  computed: {
-    startTime: {
-      set(v) {
-        this.range[0] = this.fromTime(v);
-      },
-      get() {
-        return this.toTime(this.range[0]);
-      },
-    },
-    endTime: {
-      set(v) {
-        this.range[1] = this.fromTime(v);
-      },
-      get() {
-        return this.toTime(this.range[1]);
-      },
-    },
-  },
   methods: {
     message(msg) {
       this.snackbar.message = msg;
       this.snackbar.show = true;
     },
-    fromTime(str) {
-      var res = str.match(/(\d+):(\d+):(\d+).(\d+)/);
+    toFrames(str) {
+      var res = str.match(/(\d+):(\d+):(\d+\.\d+)/);
       if (res) {
-        return Math.floor(Number(res[1]) * 3600 + Number(res[2]) * 60 + Number(res[3]) + Number(res[4]) / 100);
+        return Math.round((Number(res[1]) * 3600 + Number(res[2]) * 60 + Number(res[3])) * this.fps);
       } else {
         this.message("时间格式不符合00:00:00.000");
+        return 0;
       }
     },
     toTime(frames) {
       return new Date((frames / this.fps) * 1000).toISOString().substring(11, 23);
+    },
+    setStartTime(v) {
+      this.$set(this.range, 0, this.toFrames(v));
+    },
+    setEndTime(v) {
+      this.$set(this.range, 1, this.toFrames(v));
     },
     async onfilechange(e) {
       if (!e) return;
@@ -152,20 +144,24 @@ export default {
     },
     async getInfo() {
       console.log("getInfo");
-      const regexDuration = /^ {2}Duration: (\d+):(\d+):(\d+).(\d+)/;
+      const regexDuration = /^ {2}Duration: (\d+):(\d+):(\d+\.\d+)/;
       const regexVideo = /^ {4}Stream #0:0.+?([\d.]+) fps/;
       this.ffmpeg.setLogger(({ message }) => {
         var res;
         if ((res = regexDuration.exec(message))) {
-          this.frames = Math.floor(Number(res[1]) * 3600 + Number(res[2]) * 60 + Number(res[3]) + Number(res[4]) / 100);
+          this.frames = Math.round(Number(res[1]) * 3600 + Number(res[2]) * 60 + Number(res[3]));
         } else if ((res = regexVideo.exec(message))) {
           this.fps = Number(res[1]);
           this.frames *= this.fps;
-          this.range[1] = this.frames;
+          this.range = [0, this.frames];
         }
       });
       await this.ffmpeg.run("-i", this.file.name);
       this.ffmpeg.setLogger(() => {});
+    },
+    test() {
+      console.log("++");
+      this.range[0]++;
     },
   },
   async mounted() {
