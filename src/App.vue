@@ -140,6 +140,8 @@ export default {
     async getImage() {
       await this.ffmpeg.run("-i", this.file.name, "-frames", "1", "output.png");
       const data = this.ffmpeg.FS("readFile", "output.png");
+      //显示图片
+      if (this.image.startsWith("blob://")) URL.revokeObjectURL(this.image);
       this.image = URL.createObjectURL(new Blob([data.buffer], { type: "image/png" }));
     },
     async getInfo() {
