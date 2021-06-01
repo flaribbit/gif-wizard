@@ -177,3 +177,11 @@ export default {
   },
 };
 </script>
+
+<style>
+@media (min-width: 960px) {
+  .container {
+    max-width: 900px !important;
+  }
+}
+</style>
