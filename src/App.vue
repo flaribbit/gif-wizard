@@ -64,9 +64,7 @@
             </v-row>
             <v-row>
               <v-col>
-                <v-btn class="mr-4" color="primary" outlined @click="getImage(range[0])">getImage</v-btn>
-                <v-btn class="mr-4" color="primary" outlined @click="getInfo">getInfo</v-btn>
-                <v-btn class="mr-4" color="primary" outlined @click="test">test</v-btn>
+                <v-btn class="mr-4" color="primary" outlined @click="convert">转换</v-btn>
               </v-col>
             </v-row>
             <v-row>
@@ -76,7 +74,7 @@
             </v-row>
           </v-col>
           <v-col cols="6">
-            <v-img class="mx-auto" max-height="360" max-width="640" :src="image"></v-img>
+            <v-img class="mx-auto" contain :src="image"></v-img>
           </v-col>
         </v-row>
         <v-snackbar v-model="snackbar.show" light>
@@ -132,6 +130,7 @@ export default {
     },
     adjustTime(k, d) {
       this.$set(this.range, k, this.range[k] + d);
+      this.getImage(this.range[k]);
     },
     async onfilechange(e) {
       if (!e) return;
@@ -144,8 +143,8 @@ export default {
       //获取图片
       console.log(frame);
       await this.ffmpeg.run("-ss", this.toTime(frame), "-i", this.file.name, "-frames", "1", "output.png");
-      const data = this.ffmpeg.FS("readFile", "output.png");
       //显示图片
+      const data = this.ffmpeg.FS("readFile", "output.png");
       if (this.image.startsWith("blob://")) URL.revokeObjectURL(this.image);
       this.image = URL.createObjectURL(new Blob([data.buffer], { type: "image/png" }));
     },
@@ -167,14 +166,25 @@ export default {
       await this.ffmpeg.run("-i", this.file.name);
       this.ffmpeg.setLogger(() => {});
     },
-    test() {
-      console.log("++");
-      this.range[0]++;
+    async convert() {
+      //prettier-ignore
+      await this.ffmpeg.run(
+        "-ss", this.toTime(this.range[0]),
+        "-to", this.toTime(this.range[1]),
+        "-i", this.file.name,
+        "-vf", "scale=-2:240",
+        "-r", "10",
+        "output.gif"
+      );
+      const data = this.ffmpeg.FS("readFile", "output.gif");
+      if (this.image.startsWith("blob://")) URL.revokeObjectURL(this.image);
+      this.image = URL.createObjectURL(new Blob([data.buffer], { type: "image/gif" }));
+      this.message("转换为gif成功");
     },
   },
   async mounted() {
     const { createFFmpeg, fetchFile } = require("@ffmpeg/ffmpeg");
-    const ffmpeg = createFFmpeg();
+    const ffmpeg = createFFmpeg({ log: true });
     this.ffmpeg = ffmpeg;
     this.fetchFile = fetchFile;
     await ffmpeg.load();
