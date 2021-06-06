@@ -151,7 +151,7 @@ export default {
       //获取视频信息 主要是帧率
       console.log("getInfo");
       const regexDuration = /^ {2}Duration: (\d+):(\d+):(\d+\.\d+)/;
-      const regexVideo = /^ {4}Stream #0:0.+?([\d.]+) fps/;
+      const regexVideo = /^ {4}Stream #0:.+?([\d.]+) fps/;
       this.ffmpeg.setLogger(({ message }) => {
         var res;
         if ((res = regexDuration.exec(message))) {
